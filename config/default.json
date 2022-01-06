@@ -1,0 +1,26 @@
+{
+  "node_url": "wss://apibeta.golos.today/ws",
+  "symbols": {
+    "GLS": ["GOLOS", 4834],
+    "GGG": ["GBG", 666],
+    "USDT": ["YMUSDT", 825],
+    "HIVE": ["YMHIVE", 5370],
+    "DASH": ["YMDASH", 131],
+    "TRX": ["YMTRX", 1958],
+    "DOGE": ["DOGECOIN", 74],
+    "STEEM": ["YMSTEEM", 1230],
+    "PZM": ["YMPZM", 1681],
+    "VIZ": ["VIZUIA", 8179]
+  },
+  "pairs": [
+    "GLS_GGG",
+    "GGG_GLS",
+    "PZM_GLS",
+    "GLS_USDT",
+    "GLS_PZM",
+    "GLS_HIVE",
+    "GLS_VIZ",
+    "GLS_DOGE",
+    "GLS_STEEM"
+  ]
+}
