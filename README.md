@@ -4,17 +4,16 @@
 
 ## VERSION 1 (NEW) MANDATORY
 
-https://api.golosdex.com/api/v1
+[https://api.golosdex.com/api/v1](https://api.golosdex.com/api/v1)
 
 (for:
-https://docs.google.com/document/d/1S4urpzUnO2t7DmS_1dc4EL4tgnnbTObPYXvDeBnukCg
-)
+[https://docs.google.com/document/d/1S4urpzUnO2t7DmS_1dc4EL4tgnnbTObPYXvDeBnukCg](https://docs.google.com/document/d/1S4urpzUnO2t7DmS_1dc4EL4tgnnbTObPYXvDeBnukCg))
 
 ## Summary ENDPOINT 0
 #### ASSETS   /summary
 The summary endpoint is to provide an overview of market data for all tickers and all market pairs on the exchange.
 
-GET https://api.golosdex.com/api/v1/summary
+GET [https://api.golosdex.com/api/v1/summary](https://api.golosdex.com/api/v1/summary)
 
 ```
 [{
@@ -48,7 +47,7 @@ lowest_ask - Lowest Ask price of base currency based on given quote currency
 #### TICKER /ticker
 The ticker endpoint is to provide a 24-hour pricing and volume summary for each market pair available on the exchange.
 
-GET https://api.golosdex.com/api/v1/ticker
+GET [https://api.golosdex.com/api/v1/ticker](https://api.golosdex.com/api/v1/ticker)
 
 ```
 [{
@@ -75,7 +74,7 @@ quote_volume - 24 hour trading volume in quote pair volume
 #### ORDERBOOK /orderbook/{quote_base}
 The order book endpoint is to provide a complete level 2 order book (arranged by best asks/bids) with full depth returned for a given market pair.
 
-GET https://api.golosdex.com/api/v1/orderbook/GLS_PZM
+GET [https://api.golosdex.com/api/v1/orderbook/GLS_PZM](https://api.golosdex.com/api/v1/orderbook/GLS_PZM)
 
 ```
 {
@@ -106,7 +105,7 @@ asks - An array containing 2 elements. The ask price and quantity for each ask o
 #### TRADES /trades/{quote_base}
 The trades endpoint is to return data on all recently completed trades for a given market pair.
 
-GET https://api.golosdex.com/api/v1/trades/GLS_PZM
+GET [https://api.golosdex.com/api/v1/trades/GLS_PZM](https://api.golosdex.com/api/v1/trades/GLS_PZM)
 
 ```
 [
