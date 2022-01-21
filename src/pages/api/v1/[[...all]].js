@@ -140,7 +140,7 @@ let handler = nc({ attachParams: true, })
         if (!pair[0]) {
             throw new APIError('unknown_pair')
         }
-        const precision = 3
+        let precision = 3
         if (pair[0] !== 'GOLOS' && pair[0] !== 'GBG') {
             const res = await golos.api.getAssetsAsync('', [
                 pair[0]
