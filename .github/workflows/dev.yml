@@ -19,4 +19,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: testuigolos/api-dex
+          tags: vizlex/golos-ui-test:api-dex
