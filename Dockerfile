@@ -1,21 +1,14 @@
-FROM node:16.1
+FROM node:16.1 as build
 
 WORKDIR /var/app
-RUN mkdir -p /var/app
-ADD package.json yarn.lock /var/app/
-RUN yarn install
-
 COPY . /var/app
-
+RUN yarn install
 RUN yarn build
 
-ENV PORT 8080
-ENV NODE_ENV production
+FROM node:16.1 as production
 
-EXPOSE 8080
+WORKDIR /var/app
+COPY --from=build /var/app /var/app
 
+EXPOSE 3000
 CMD [ "yarn", "run", "production" ]
-
-# uncomment the lines below to run it in development mode
-# ENV NODE_ENV development
-# CMD [ "yarn", "run", "dev" ]
