@@ -22,5 +22,8 @@
     "GLS_VIZ",
     "GLS_DOGE",
     "GLS_STEEM"
-  ]
+  ],
+  "coinmarketcap_requests": {
+    "api_key": "7dcec520-90cd-4e38-b43a-0ff6bdb2731b"
+  }
 }

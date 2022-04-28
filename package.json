@@ -5,6 +5,8 @@
   "license": "MIT",
   "dependencies": {
     "config": "^3.3.6",
+    "cors": "^2.8.5",
+    "cross-fetch": "^3.1.5",
     "git-rev-sync": "^3.0.1",
     "github-markdown-css": "^5.1.0",
     "golos-lib-js": "0.9.23",

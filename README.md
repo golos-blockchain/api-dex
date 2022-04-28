@@ -131,4 +131,26 @@ Used to determine whether or not the transaction originated as a buy or sell.
   Buy – Identifies an ask was removed from the order book.
   Sell – Identifies a bid was removed from the order book.
 ```
-                   
+
+## Получение курса токенов GOLOS и другая информация
+
+GET [https://api-dex.golos.app/api/v1/cmc/GOLOS](https://api-dex.golos.app/api/v1/cmc/GOLOS)
+
+Дает возможность получить информацию о цене CoinMarketCap (в рублях и $) токенов GOLOS, GBG, YMRUB и т.д. Поддерживает большинство токенов, которые доступны на GOLOS.
+
+```
+{
+    "status": "ok",
+    "price_usd": 0.0026651538105083973,
+    "price_rub": 0.20621626542743116,
+    "from_cache": false,
+    "updated": "2022-04-23T14:58:16",
+    "data": {
+        ... другая информация, полученная непосредственно от CoinMarketCap
+```
+
+```
+price_usd - цена в $ или null, если не удалось получить цену
+price_rub - цена в руб. или null, если не удалось получить цену
+updated - момент, когда были получены эти данные от CoinMarketCap. Получение данных от CoinMarketCap осуществляется раз в 15 минут.
+```
