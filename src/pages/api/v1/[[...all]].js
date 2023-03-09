@@ -1,7 +1,8 @@
 import config from 'config'
 import git from 'git-rev-sync'
 import golos from 'golos-lib-js'
-import nc from 'next-connect'
+
+import nextConnect from '@/nextConnect'
 
 golos.config.set('websocket', config.get('node_url'))
 
@@ -26,7 +27,7 @@ const parseMarketPair = (pair) => {
     return [ cfgSymbols.get(base)[0], cfgSymbols.get(quote)[0] ]
 }
 
-let handler = nc({ attachParams: true, })
+let handler = nextConnect({ attachParams: true, })
 
     .get('/api/v1', async (req, res) => {
         let version = 'dev'
