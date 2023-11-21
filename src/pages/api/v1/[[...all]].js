@@ -67,6 +67,15 @@ let handler = nextConnect({ attachParams: true, })
     })
 
     .get('/api/v1/summary', async (req, res) => {
+        const now = Date.now()
+        if (global.cachedDate && ((now - global.cachedDate) > 5*60*1000)) {
+            delete global.cachedSummary
+            delete global.cachedDate
+        }
+        if (global.cachedSummary) {
+            res.setHeader('X-Cached', 'true')
+            res.json(global.cachedSummary)
+        }
         const ret = []
         for (const pairId of cfgPairs) {
             const obj = {
@@ -124,7 +133,11 @@ let handler = nextConnect({ attachParams: true, })
 
             ret.push(obj)
         }
-        res.json(ret)
+        if (!global.cachedSummary) {
+            res.json(ret)
+        }
+        global.cachedSummary = ret
+        global.cachedDate = now
     })
 
     .get('/api/v1/orderbook/:market_pair', async (req, res) => {
