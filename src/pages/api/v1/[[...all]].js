@@ -1,6 +1,7 @@
 import config from 'config'
 import git from 'git-rev-sync'
 import golos from 'golos-lib-js'
+import { Asset, Price } from 'golos-lib-js/lib/utils'
 
 import nextConnect from '@/nextConnect'
 import { parseMarketPair } from '@/utils/misc'
@@ -217,6 +218,81 @@ let handler = nextConnect({ attachParams: true, })
             ret.push(obj)
         }
         res.json(ret)
+    })
+
+    .get('/api/v1/exchange/:sell/:buy_sym/:direction?', async (req, res) => {
+        let { sell, buy_sym, direction } = req.params
+        if (!direction) direction = 'sell'
+        try {
+            sell = await Asset(sell.split('%20').join(' '))
+        } catch (err) {
+            res.json({
+                error: 'wrong_sell_asset'
+            })
+            return
+        }
+
+        const pairId = sell.symbol + '_' + buy_sym
+        const cached = global.cachedOrders && global.cachedOrders[pairId]
+        const now = Date.now()
+        let orders
+        if (cached && (now - cached.time) < 10*1000) {
+           orders = cached.orders 
+        } else {
+            for (let i = 0; i < 3; ++i) {
+                try {
+                    orders = await golos.api.getOrderBookExtendedAsync(500, [sell.symbol, buy_sym])
+                    break
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+            if (!orders) {
+                res.json({
+                    error: 'blockchain_unavailable'
+                })
+                return
+            }
+            global.cachedOrders = global.cachedOrders || {}
+            global.cachedOrders[pairId] = { orders, time: now }
+        }
+
+        const isSell = direction === 'sell'
+
+        if ((isSell && !orders.bids.length) || (!isSell && !orders.asks.length)) {
+            res.json({
+                error: 'no_orders'
+            })
+            return
+        }
+
+        let ret, best_price, limit_price
+        for (const bid of (isSell ? orders.bids : orders.asks)) {
+            if (!ret) {
+                ret = await Asset(bid.order_price.quote)
+                ret.amount = 0
+            }
+
+            const price = await Price(bid.order_price)
+            best_price = best_price || price.clone()
+            limit_price = price.clone()
+
+            const orderAmount = bid.asset1
+            const amount = sell.min(orderAmount)
+            const receive = amount.mul(price)
+            ret = ret.plus(receive)
+            sell = sell.minus(orderAmount)
+
+            if (sell.lte(0)) {
+                break
+            }
+        }
+        res.json({
+            result: ret,
+            remain: sell.gt(0) ? sell : undefined,
+            best_price,
+            limit_price
+        })
     })
 
 export default handler
