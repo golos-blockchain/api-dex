@@ -3,6 +3,7 @@ import git from 'git-rev-sync'
 import golos from 'golos-lib-js'
 
 import nextConnect from '@/nextConnect'
+import { parseMarketPair } from '@/utils/misc'
 
 golos.config.set('websocket', config.get('node_url'))
 
@@ -17,14 +18,6 @@ class APIError {
     constructor(errorName) {
         this.errorName = errorName;
     }
-}
-
-const parseMarketPair = (pair) => {
-    if (!cfgPairs.includes(pair)) {
-        return []
-    }
-    const [ base, quote ] = pair.split('_')
-    return [ cfgSymbols.get(base)[0], cfgSymbols.get(quote)[0] ]
 }
 
 let handler = nextConnect({ attachParams: true, })
