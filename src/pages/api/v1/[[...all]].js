@@ -49,7 +49,7 @@ let handler = nextConnect({ attachParams: true, })
                 let { current_pays, open_pays } = trades[0]
                 current_pays = current_pays.split(' ')[0]
                 open_pays = open_pays.split(' ')[0]
-                if (trades[0].current_pays.endsWith(parsed[0]))
+                if (trades[0].current_pays.endsWith(parsed[1]))
                     last_price = parseFloat(current_pays) / parseFloat(open_pays)
                 else
                     last_price = parseFloat(open_pays) / parseFloat(current_pays)
@@ -95,7 +95,7 @@ let handler = nextConnect({ attachParams: true, })
                 let { current_pays, open_pays } = trade
                 current_pays = current_pays.split(' ')[0]
                 open_pays = open_pays.split(' ')[0]
-                if (trade.current_pays.endsWith(parsed[0]))
+                if (trade.current_pays.endsWith(parsed[1]))
                     trade.price = parseFloat(current_pays) / parseFloat(open_pays)
                 else
                     trade.price = parseFloat(open_pays) / parseFloat(current_pays)
@@ -209,7 +209,7 @@ let handler = nextConnect({ attachParams: true, })
             let [ b, bsym ] = trade.open_pays.split(' ')
             const base_volume = pair[0] == asym ? a : b
             const quote_volume = pair[1] == asym ? a : b
-            obj.price = (parseFloat(base_volume) / parseFloat(quote_volume)).toFixed(8)
+            obj.price = (parseFloat(quote_volume) / parseFloat(base_volume)).toFixed(8)
             obj.base_volume = base_volume
             obj.quote_volume = quote_volume
             obj.timestamp = (+new Date(trade.date + 'Z')).toString()
