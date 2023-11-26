@@ -1,8 +1,10 @@
 import config from 'config'
 import git from 'git-rev-sync'
 import golos from 'golos-lib-js'
+import { Asset, Price } from 'golos-lib-js/lib/utils'
 
 import nextConnect from '@/nextConnect'
+import { parseMarketPair } from '@/utils/misc'
 
 golos.config.set('websocket', config.get('node_url'))
 
@@ -17,14 +19,6 @@ class APIError {
     constructor(errorName) {
         this.errorName = errorName;
     }
-}
-
-const parseMarketPair = (pair) => {
-    if (!cfgPairs.includes(pair)) {
-        return []
-    }
-    const [ base, quote ] = pair.split('_')
-    return [ cfgSymbols.get(base)[0], cfgSymbols.get(quote)[0] ]
 }
 
 let handler = nextConnect({ attachParams: true, })
@@ -56,7 +50,7 @@ let handler = nextConnect({ attachParams: true, })
                 let { current_pays, open_pays } = trades[0]
                 current_pays = current_pays.split(' ')[0]
                 open_pays = open_pays.split(' ')[0]
-                if (trades[0].current_pays.endsWith(parsed[0]))
+                if (trades[0].current_pays.endsWith(parsed[1]))
                     last_price = parseFloat(current_pays) / parseFloat(open_pays)
                 else
                     last_price = parseFloat(open_pays) / parseFloat(current_pays)
@@ -74,6 +68,15 @@ let handler = nextConnect({ attachParams: true, })
     })
 
     .get('/api/v1/summary', async (req, res) => {
+        const now = Date.now()
+        if (global.cachedDate && ((now - global.cachedDate) > 5*60*1000)) {
+            delete global.cachedSummary
+            delete global.cachedDate
+        }
+        if (global.cachedSummary) {
+            res.setHeader('X-Cached', 'true')
+            res.json(global.cachedSummary)
+        }
         const ret = []
         for (const pairId of cfgPairs) {
             const obj = {
@@ -93,7 +96,7 @@ let handler = nextConnect({ attachParams: true, })
                 let { current_pays, open_pays } = trade
                 current_pays = current_pays.split(' ')[0]
                 open_pays = open_pays.split(' ')[0]
-                if (trade.current_pays.endsWith(parsed[0]))
+                if (trade.current_pays.endsWith(parsed[1]))
                     trade.price = parseFloat(current_pays) / parseFloat(open_pays)
                 else
                     trade.price = parseFloat(open_pays) / parseFloat(current_pays)
@@ -131,7 +134,11 @@ let handler = nextConnect({ attachParams: true, })
 
             ret.push(obj)
         }
-        res.json(ret)
+        if (!global.cachedSummary) {
+            res.json(ret)
+        }
+        global.cachedSummary = ret
+        global.cachedDate = now
     })
 
     .get('/api/v1/orderbook/:market_pair', async (req, res) => {
@@ -203,7 +210,7 @@ let handler = nextConnect({ attachParams: true, })
             let [ b, bsym ] = trade.open_pays.split(' ')
             const base_volume = pair[0] == asym ? a : b
             const quote_volume = pair[1] == asym ? a : b
-            obj.price = (parseFloat(base_volume) / parseFloat(quote_volume)).toFixed(8)
+            obj.price = (parseFloat(quote_volume) / parseFloat(base_volume)).toFixed(8)
             obj.base_volume = base_volume
             obj.quote_volume = quote_volume
             obj.timestamp = (+new Date(trade.date + 'Z')).toString()
@@ -211,6 +218,81 @@ let handler = nextConnect({ attachParams: true, })
             ret.push(obj)
         }
         res.json(ret)
+    })
+
+    .get('/api/v1/exchange/:sell/:buy_sym/:direction?', async (req, res) => {
+        let { sell, buy_sym, direction } = req.params
+        if (!direction) direction = 'sell'
+        try {
+            sell = await Asset(sell.split('%20').join(' '))
+        } catch (err) {
+            res.json({
+                error: 'wrong_sell_asset'
+            })
+            return
+        }
+
+        const pairId = sell.symbol + '_' + buy_sym
+        const cached = global.cachedOrders && global.cachedOrders[pairId]
+        const now = Date.now()
+        let orders
+        if (cached && (now - cached.time) < 10*1000) {
+           orders = cached.orders 
+        } else {
+            for (let i = 0; i < 3; ++i) {
+                try {
+                    orders = await golos.api.getOrderBookExtendedAsync(500, [sell.symbol, buy_sym])
+                    break
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+            if (!orders) {
+                res.json({
+                    error: 'blockchain_unavailable'
+                })
+                return
+            }
+            global.cachedOrders = global.cachedOrders || {}
+            global.cachedOrders[pairId] = { orders, time: now }
+        }
+
+        const isSell = direction === 'sell'
+
+        if ((isSell && !orders.bids.length) || (!isSell && !orders.asks.length)) {
+            res.json({
+                error: 'no_orders'
+            })
+            return
+        }
+
+        let ret, best_price, limit_price
+        for (const bid of (isSell ? orders.bids : orders.asks)) {
+            if (!ret) {
+                ret = await Asset(bid.order_price.quote)
+                ret.amount = 0
+            }
+
+            const price = await Price(bid.order_price)
+            best_price = best_price || price.clone()
+            limit_price = price.clone()
+
+            const orderAmount = bid.asset1
+            const amount = sell.min(orderAmount)
+            const receive = amount.mul(price)
+            ret = ret.plus(receive)
+            sell = sell.minus(orderAmount)
+
+            if (sell.lte(0)) {
+                break
+            }
+        }
+        res.json({
+            result: ret,
+            remain: sell.gt(0) ? sell : undefined,
+            best_price,
+            limit_price
+        })
     })
 
 export default handler
