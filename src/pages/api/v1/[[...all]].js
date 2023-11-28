@@ -268,11 +268,6 @@ let handler = nextConnect({ attachParams: true, })
 
         let ret, best_price, limit_price
         for (const bid of (isSell ? orders.bids : orders.asks)) {
-            if (!ret) {
-                ret = await Asset(bid.order_price.quote)
-                ret.amount = 0
-            }
-
             const price = await Price(bid.order_price)
             best_price = best_price || price.clone()
             limit_price = price.clone()
@@ -280,7 +275,7 @@ let handler = nextConnect({ attachParams: true, })
             const orderAmount = bid.asset1
             const amount = sell.min(orderAmount)
             const receive = amount.mul(price)
-            ret = ret.plus(receive)
+            ret = ret ? ret.plus(receive) : receive.clone()
             sell = sell.minus(orderAmount)
 
             if (sell.lte(0)) {
