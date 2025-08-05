@@ -55,27 +55,37 @@ export const getData = async () => {
     let from_golos = false
     const now = new Date()
     if (!global.cached || (now - global.cached.updated) > cacheLifetime) {
-        let resp2
-        try {
-            resp = await doRequest('USD')
-            resp2 = await doRequest('RUB')
-        } catch (err) {
-            console.error('CMC error')
-        }
-        if (!resp || !resp.data || !resp2 || !resp2.data) {
-            updated = now
-            resp = await golosMarketData()
-            from_golos = true
-        } else {
-            for (let [id, d] of Object.entries(resp2.data)) {
-                resp.data[id].quote['RUB'] = d.quote['RUB']
+        if (!config.has('golos_market_only') || !config.get('golos_market_only')) {
+            let resp2
+            try {
+                resp = await doRequest('USD')
+                resp2 = await doRequest('RUB')
+            } catch (err) {
+                console.error('CMC error', err)
             }
-            updated = now
-            global.cached = {
-                resp,
-                updated
+            if (resp?.data && resp2?.data) {
+                let dataUsd = false
+                let dataRub = false
+                for (let [id, d] of Object.entries(resp2.data)) {
+                    const merged = resp.data[id]
+                    merged.quote['RUB'] = d.quote['RUB']
+
+                    if (merged.quote['USD']) dataUsd = merged.quote['USD']
+                    if (merged.quote['RUB']) dataRub = merged.quote['RUB']
+                }
+                if (dataUsd?.price || dataRub?.price) {
+                    updated = now
+                    global.cached = {
+                        resp,
+                        updated
+                    }
+                    return { resp, updated, from_cache, from_golos }
+                }
             }
         }
+        updated = now
+        resp = await golosMarketData()
+        from_golos = true
     } else {
         resp = global.cached.resp
         updated = global.cached.updated
