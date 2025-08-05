@@ -27,6 +27,7 @@
     "api_key": "7dcec520-90cd-4e38-b43a-0ff6bdb2731b"
   },
   "golos_usd": ["GOLOS", "YMUSDT"],
+  "golos_market_only": false,
   "dex_service": {
     "host": "https://dex.golos.app"
   }
