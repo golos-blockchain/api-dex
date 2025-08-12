@@ -4,30 +4,17 @@ import golos from 'golos-lib-js'
 import nextConnect from '@/nextConnect'
 import { corsMiddleware, } from '@/corsMiddleware'
 import { apiKeyError, getData, } from '@/utils/CMC'
+import { getID, getGolosSym } from '@/utils/misc'
 
 golos.config.set('websocket', config.get('node_url'))
 
-const cfgSymbols = config.get('symbols')
-
-function getID(sym) {
-    for (const [cmcSym, val] of Object.entries(cfgSymbols)) {
-        if (val[0] === sym.toUpperCase()) {
-            return val[1]
-        }
-    }
-    return null
-}
-
-function getGolosSym(id) {
-    for (const [cmcSym, val] of Object.entries(cfgSymbols)) {
-        if (parseInt(val[1]) === parseInt(id)) {
-            return val[0]
-        }
-    }
-    return null
-}
-
-let handler = nextConnect({ attachParams: true, })
+let handler = nextConnect({ attachParams: true,
+    onError: async (err, req, res) => {
+        res.json({
+            status: err,
+            error: (err?.message || err),
+        })
+    }})
 
     .get('/api/v1/cmc/:sym?', async (req, res) => {
         const akError = apiKeyError()
@@ -66,7 +53,7 @@ let handler = nextConnect({ attachParams: true, })
             }
         }
 
-        let { resp, updated, from_cache, from_golos } = await getData()
+        let { resp, updated, from_cache, from_golos } = await getData(req.params.sym)
 
         const getPrice = (data, sym) => {
             try {

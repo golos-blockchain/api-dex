@@ -2,6 +2,7 @@ import config from 'config'
 import { fetchEx } from 'golos-lib-js/lib/utils'
 
 import { golosMarketData } from './golosMarketData'
+import { getGolosSym } from '@/utils/misc'
 
 const cfgSymbols = config.get('symbols')
 
@@ -49,11 +50,12 @@ const doRequest = async (convert) => {
     return resp
 }
 
-export const getData = async () => {
-    let resp, updated
+export const getData = async (sym = 'GOLOS') => {
+    let resp
     let from_cache = false
-    let from_golos = false
+    let updated
     const now = new Date()
+    const golosSyms = []
     if (!global.cached || (now - global.cached.updated) > cacheLifetime) {
         if (!config.has('golos_market_only') || !config.get('golos_market_only')) {
             let resp2
@@ -70,26 +72,31 @@ export const getData = async () => {
                     const merged = resp.data[id]
                     merged.quote['RUB'] = d.quote['RUB']
 
-                    if (merged.quote['USD']) dataUsd = merged.quote['USD']
-                    if (merged.quote['RUB']) dataRub = merged.quote['RUB']
-                }
-                if (dataUsd?.price || dataRub?.price) {
-                    updated = now
-                    global.cached = {
-                        resp,
-                        updated
+                    if (!(merged.quote['USD']?.price) && !(merged.quote['RUB']?.price)) {
+                        const gSym = getGolosSym(id)
+                        //if (!sym || gSym === sym)
+                        golosSyms.push(gSym)
+                    } else {
+                        merged.updated = now;
                     }
-                    return { resp, updated, from_cache, from_golos }
                 }
             }
         }
+        if (golosSyms.length) {
+            const respGolos = await golosMarketData(golosSyms)
+            for (let [id, d] of Object.entries(respGolos.data)) {
+                resp.data[id] = { from_golos: true, ...respGolos.data[id] };
+            }
+        }
         updated = now
-        resp = await golosMarketData()
-        from_golos = true
+        global.cached = {
+            resp,
+            updated
+        }
     } else {
         resp = global.cached.resp
         updated = global.cached.updated
         from_cache = true
     }
-    return { resp, updated, from_cache, from_golos }
+    return { resp, updated, from_cache }
 }
